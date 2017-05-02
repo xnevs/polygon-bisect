@@ -5,6 +5,7 @@
 #include <tuple>
 #include <numeric>
 #include <algorithm>
+#include <limits>
 #include <cmath>
 
 double left_area(const polygon_t & polygon, double split_x) {
@@ -31,7 +32,7 @@ double left_area(const polygon_t & polygon, double split_x) {
     return area;
 }
 
-double polygon_height_at_x(const polygon_t & polygon, double x, bool lean_left) {
+double polygon_height_at(const polygon_t & polygon, double x, bool lean_left) {
     auto n = polygon.size();
     std::vector<double> intersections;
     for(polygon_t::size_type i=1; i<=n; ++i) {
@@ -39,9 +40,7 @@ double polygon_height_at_x(const polygon_t & polygon, double x, bool lean_left) 
         auto y1 = polygon[i-1].second;
         auto x2 = polygon[i%n].first - x;
         auto y2 = polygon[i%n].second;
-        if( x1 * x2 <= 0
-             && (   ( lean_left && (x1 < 0 || x2 < 0))
-                 || (!lean_left && (x1 > 0 || x2 > 0)))) {
+        if( x1 * x2 <= 0 && (lean_left ? (x1<0 || x2<0) : (x1>0 || x2>0)) ) {
             auto ax1 = std::abs(x1);
             auto ax2 = std::abs(x2);
             auto y = (ax2 * y1 + ax1 * y2) / (ax1 + ax2);
@@ -61,11 +60,7 @@ double solve_quad_eqn(double a, double b, double c, double sx, double ex) {
         auto sqrtD = std::sqrt(b*b - 4*a*c);
         auto x1 = (-b + sqrtD) / (2*a);
         auto x2 = (-b - sqrtD) / (2*a);
-        if(sx <= x1 && x1 <= ex) {
-            return x1;
-        } else {
-            return x2;
-        }
+        return sx <= x1 && x1 <= ex ? x1 : x2;
     } else {
         return -c / b;
     }
@@ -75,16 +70,16 @@ double polygon_bisect(const polygon_t & polygon) {
     auto n = polygon.size();
     std::vector<polygon_t::size_type> idxs(n);
     std::iota(begin(idxs),end(idxs),0);
-    std::sort(begin(idxs),end(idxs), [&polygon](int a, int b) {
+    std::sort(begin(idxs),end(idxs),[&polygon](auto a, auto b) {
         return polygon[a] < polygon[b];
     });
     auto area = left_area(polygon, std::numeric_limits<double>::infinity());
     // bisection
     polygon_t::size_type left  = 0;
-    double lla = 0.0;
     polygon_t::size_type right = n-1;
+    double lla = 0.0;
     while(right - left > 1) {
-        polygon_t::size_type mid = left + (right - left) / 2;
+        auto mid = left + (right - left) / 2;
         auto split_x = polygon[idxs[mid]].first;
         auto mla = left_area(polygon,split_x);
         if(mla < area/2) {
@@ -97,11 +92,8 @@ double polygon_bisect(const polygon_t & polygon) {
     auto lx = polygon[idxs[left]].first;
     auto rx = polygon[idxs[right]].first;
     // compute final line
-    double left_height  = polygon_height_at_x(polygon, lx, false);
-    double right_height = polygon_height_at_x(polygon, rx, true);
+    auto lh = polygon_height_at(polygon, lx, false);
+    auto rh = polygon_height_at(polygon, rx, true);
     auto dx = rx - lx;
-    auto a = (right_height - left_height) / (2 * dx);
-    auto b = left_height;
-    auto c = lla - area/2;
-    return lx + solve_quad_eqn(a,b,c,0,dx);
+    return lx + solve_quad_eqn((rh-lh)/(2*dx) , lh, lla-area/2 , 0 , dx);
 }
