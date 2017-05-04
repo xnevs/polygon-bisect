@@ -34,7 +34,7 @@ double left_area(const polygon_t & polygon, double split_x) {
 
 double polygon_height_at(const polygon_t & polygon, double x, bool lean_left) {
     auto n = polygon.size();
-    std::vector<double> intersections;
+    double height = 0.0;
     for(polygon_t::size_type i=1; i<=n; ++i) {
         auto x1 = polygon[i-1].first - x;
         auto y1 = polygon[i-1].second;
@@ -44,13 +44,8 @@ double polygon_height_at(const polygon_t & polygon, double x, bool lean_left) {
             auto ax1 = std::abs(x1);
             auto ax2 = std::abs(x2);
             auto y = (ax2 * y1 + ax1 * y2) / (ax1 + ax2);
-            intersections.push_back(y);
+            height += x2 > x1 ? y : -y;
         }
-    }
-    std::sort(begin(intersections),end(intersections));
-    double height = 0.0;
-    for(std::size_t i=0; i<intersections.size(); i+=2) {
-        height += intersections[i+1] - intersections[i];
     }
     return height;
 }
