@@ -1,28 +1,39 @@
 #include <iostream>
 #include <limits>
+#include <algorithm>
+#include <chrono>
+#include <cstdlib>
 
 #include "polygon_bisect.hpp"
+#include "generate_polygon.hpp"
 
 // declare for testing purposes
 double left_area(const polygon_t & polygon, double split_x);
 
 using namespace std;
 
-int main() {
-    polygon_t polygon{{0,7},{7,8},{8,0},{3,1},{6,2},{2,3},{5,4},{1,5},{4,6}};
+int main(int argc, char *argv[]) {
+    
+    polygon_t polygon = generate_polygon(atoi(argv[1]));
 
-    double x, la, a;
+    auto num_rep = max(static_cast<std::size_t>(5),4000000/polygon.size());
+    vector<double> results(num_rep);
 
-    x = polygon_bisect(polygon);
-    cout << x << endl;
-    a = left_area(polygon, numeric_limits<double>::infinity());
-    la = left_area(polygon, x);
-    cout << la << " " << a << endl;
+    chrono::time_point<chrono::steady_clock> start, end;
+    start = chrono::steady_clock::now();
+    for(int i=0; i<num_rep; ++i) {
+        double x, la, a;
+        results[i] = polygon_bisect(polygon);
+        //a = left_area(polygon, numeric_limits<double>::infinity());
+        //la = left_area(polygon, x);
+        //cout << la << " " << a << endl;
+    }
+    end = chrono::steady_clock::now();
+    auto elapsed = chrono::duration_cast<chrono::milliseconds>(end - start);
 
-    polygon_t p1{{0,1},{1,1},{1,0},{0,0}};
-    x = polygon_bisect(p1);
-    cout << x << endl;
-    a = left_area(p1, numeric_limits<double>::infinity());
-    la = left_area(p1, x);
-    cout << la << " " << a << endl;
+    cerr << polygon.size() << " " << num_rep << " " << elapsed.count() << endl;
+    
+    for(auto x : results) {
+        cout << x << endl;
+    }
 }
