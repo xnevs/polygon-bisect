@@ -1,5 +1,5 @@
 CXX=g++
-CXX_FLAGS=-std=c++14 -O3 -march=native -mtune=native
+CXX_FLAGS=-std=c++14 -O2 -march=native -mtune=native
 
 all: test-polygon-bisect
 
